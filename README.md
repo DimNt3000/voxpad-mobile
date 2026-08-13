@@ -4,9 +4,10 @@ A text to speech reader for Android and iOS, built with React Native, Expo and T
 text, pick one of the voices installed on the device, and listen while the sentence being spoken
 is highlighted. Nothing leaves the phone.
 
-This is the native companion to Voxpad for the web, a sibling project that does the same job in
-the browser with vanilla JavaScript on the Web Speech API. The two share the same architecture
-and the same design language; what changed is the platform layer.
+This is the native companion to [Voxpad for the web](https://github.com/DimNt3000/voxpad)
+([live demo](https://dimnt3000.github.io/voxpad/)), which does the same job in the browser with
+vanilla JavaScript on the Web Speech API. The two share the same architecture and the same
+design language; what changed is the platform layer.
 
 <p align="center">
   <img src="docs/screenshot-android-native.png" width="300" alt="Voxpad running on an Android 16 emulator, reading an English paragraph: the active sentence is shaded, the spoken word is highlighted by a native word boundary event, transport controls at the bottom">
