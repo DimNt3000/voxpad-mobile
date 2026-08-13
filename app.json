@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Voxpad",
+    "slug": "voxpad",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "imageWidth": 180,
+      "resizeMode": "contain",
+      "backgroundColor": "#f6f4ef",
+      "dark": {
+        "backgroundColor": "#131311"
+      }
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ntoulias.voxpad"
+    },
+    "android": {
+      "package": "com.ntoulias.voxpad",
+      "adaptiveIcon": {
+        "backgroundColor": "#a8431d",
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "monochromeImage": "./assets/adaptive-icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
