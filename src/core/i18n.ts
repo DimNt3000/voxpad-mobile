@@ -154,13 +154,30 @@ const SAMPLES: Record<UiLanguage, string> = {
 
 export const LANGUAGES: UiLanguage[] = ['en', 'el'];
 
+/**
+ * Picks a starting language from the device locale, defaulting to English.
+ * Hermes ships Intl on Android; the try/catch covers engines that do not.
+ */
+export function detectLanguage(): UiLanguage {
+  try {
+    const tag = Intl.DateTimeFormat().resolvedOptions().locale || '';
+    const primary = tag.split('-')[0].toLowerCase() as UiLanguage;
+    if (LANGUAGES.includes(primary)) return primary;
+  } catch {
+    /* no Intl, fall through */
+  }
+  return 'en';
+}
+
 export function translate(lang: UiLanguage, key: string, vars?: Vars): string {
-  const value = STRINGS[lang][key] ?? STRINGS.en[key];
+  // A corrupt persisted value must degrade to English, not throw.
+  const table = STRINGS[lang] ?? STRINGS.en;
+  const value = table[key] ?? STRINGS.en[key];
   if (value === undefined) return key;
   return typeof value === 'function' ? value(vars || {}) : value;
 }
 
-export const sampleText = (lang: UiLanguage): string => SAMPLES[lang];
+export const sampleText = (lang: UiLanguage): string => SAMPLES[lang] ?? SAMPLES.en;
 
 export const scriptName = (lang: UiLanguage, script: string): string =>
   SCRIPTS[lang]?.[script] || script;

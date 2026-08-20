@@ -57,17 +57,26 @@ export function ReaderPane(props: {
   const scrollRef = useRef<ScrollView>(null);
   const offsets = useRef<Map<string, number>>(new Map());
 
+  // Offsets are keyed by paragraph position, so onLayout overwrites the ones
+  // that still exist after a text change. They are deliberately NOT cleared:
+  // React Native skips onLayout when a paragraph's box happens to be
+  // unchanged, and a cleared entry would never be refilled.
+
   /** Paragraph containing the active sentence, for auto scroll. */
   const activeParagraph = useMemo(() => {
     if (activeIndex < 0) return null;
     return paragraphs.find((p) => p.chunks.some((c) => c.index === activeIndex)) ?? null;
   }, [paragraphs, activeIndex]);
 
-  useEffect(() => {
-    if (!activeParagraph) return;
-    const y = offsets.current.get(activeParagraph.key);
+  const scrollToKey = (key: string) => {
+    const y = offsets.current.get(key);
     if (y === undefined) return;
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });
+  };
+
+  useEffect(() => {
+    if (activeParagraph) scrollToKey(activeParagraph.key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeParagraph]);
 
   if (!chunks.length) {
@@ -83,18 +92,28 @@ export function ReaderPane(props: {
       {paragraphs.map((paragraph) => (
         <View
           key={paragraph.key}
-          onLayout={(e) => offsets.current.set(paragraph.key, e.nativeEvent.layout.y)}
+          onLayout={(e) => {
+            offsets.current.set(paragraph.key, e.nativeEvent.layout.y);
+            // First measurement after a (re)mount: if this paragraph already
+            // holds the active sentence, scroll to it now; the effect above
+            // ran before any layout existed.
+            if (activeParagraph?.key === paragraph.key) scrollToKey(paragraph.key);
+          }}
           style={styles.paragraph}
         >
           <Text style={[styles.body, { color: theme.ink }]}>
             {paragraph.chunks.map(({ chunk, index }, i) => (
               <React.Fragment key={index}>
-                {i > 0 ? ' ' : null}
+                {/* Render the source gap, not a hardcoded space: hard-split
+                    halves of one long token have a zero-width gap and gluing
+                    a space into them would misrender URLs. */}
+                {i > 0 ? text.slice(paragraph.chunks[i - 1].chunk.end, chunk.start) : null}
                 <Sentence
                   chunk={chunk}
+                  index={index}
                   state={index === activeIndex ? 'active' : activeIndex >= 0 && index < activeIndex ? 'done' : 'idle'}
                   word={word && word.index === index ? word : null}
-                  onPress={() => onSentencePress(index)}
+                  onPressIndex={onSentencePress}
                   theme={theme}
                 />
               </React.Fragment>
@@ -109,12 +128,16 @@ export function ReaderPane(props: {
 
 const Sentence = React.memo(function Sentence(props: {
   chunk: Chunk;
+  index: number;
   state: 'idle' | 'active' | 'done';
   word: WordRange | null;
-  onPress: () => void;
+  /** Stable across renders; a fresh inline closure per sentence would defeat
+   *  the memo and re-render every sentence on every word boundary. */
+  onPressIndex: (index: number) => void;
   theme: Theme;
 }) {
-  const { chunk, state, word, onPress, theme } = props;
+  const { chunk, index, state, word, onPressIndex, theme } = props;
+  const onPress = () => onPressIndex(index);
   const base = {
     backgroundColor: state === 'active' ? theme.hlSentence : 'transparent',
     color: state === 'done' ? theme.inkFaint : theme.ink,

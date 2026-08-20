@@ -58,17 +58,32 @@ export async function loadDraft(): Promise<string> {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingDraft: string | null = null;
 
 /** Debounced so typing does not hit storage on every keystroke. */
 export function saveDraft(text: string): void {
   if (saveTimer) clearTimeout(saveTimer);
+  pendingDraft = text;
   saveTimer = setTimeout(() => {
+    pendingDraft = null;
     if (!text) clearDraft();
     else AsyncStorage.setItem(DRAFT_KEY, text.slice(0, MAX_DRAFT)).catch(() => {});
   }, SAVE_DELAY_MS);
 }
 
+/** Writes any pending debounced draft immediately. Called when the app goes to
+ *  the background, where Android may kill the process before the timer fires. */
+export function flushDraft(): void {
+  if (pendingDraft === null) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  const text = pendingDraft;
+  pendingDraft = null;
+  if (!text) clearDraft();
+  else AsyncStorage.setItem(DRAFT_KEY, text.slice(0, MAX_DRAFT)).catch(() => {});
+}
+
 export function clearDraft(): void {
   if (saveTimer) clearTimeout(saveTimer);
+  pendingDraft = null;
   AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
 }

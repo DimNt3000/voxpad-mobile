@@ -23,7 +23,7 @@ export async function loadVoices(): Promise<Speech.Voice[]> {
     } catch {
       /* engine not ready yet */
     }
-    await wait(BACKOFF_MS * (attempt + 1));
+    if (attempt < RETRIES - 1) await wait(BACKOFF_MS * (attempt + 1));
   }
   return [];
 }

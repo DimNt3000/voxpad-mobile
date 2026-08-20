@@ -8,6 +8,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AppState,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -32,10 +33,11 @@ import {
   formatDuration,
   type Chunk,
 } from './src/core/segmenter';
-import { LANGUAGES, sampleText, scriptName, translate, type UiLanguage } from './src/core/i18n';
+import { LANGUAGES, detectLanguage, sampleText, scriptName, translate, type UiLanguage } from './src/core/i18n';
 import {
   DEFAULT_PREFS,
   clearDraft,
+  flushDraft,
   loadDraft,
   loadPrefs,
   saveDraft,
@@ -83,7 +85,8 @@ function Main() {
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const uiLang: UiLanguage = prefs.lang ?? 'en';
+  const deviceLang = useRef(detectLanguage()).current;
+  const uiLang: UiLanguage = prefs.lang ?? deviceLang;
   const scheme = prefs.theme ?? (systemScheme === 'dark' ? 'dark' : 'light');
   const theme = themeFor(scheme);
   const t = useCallback(
@@ -112,7 +115,7 @@ function Main() {
 
       const found = await loadVoices();
       if (!alive) return;
-      const deviceTag = primaryTag(storedPrefs.lang ?? 'en');
+      const deviceTag = primaryTag(storedPrefs.lang ?? deviceLang);
       const sorted = sortVoices(found, [deviceTag]);
       setVoices(sorted);
       const saved = storedPrefs.voiceId
@@ -124,8 +127,15 @@ function Main() {
         engine.applySettings({ voiceId: initial.identifier, language: initial.language });
       }
     })();
+    // Backgrounding may kill the process before the debounced draft save
+    // fires; flush it while we still can.
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background' || state === 'inactive') flushDraft();
+    });
+
     return () => {
       alive = false;
+      sub.remove();
       engine.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,6 +177,11 @@ function Main() {
     (value: string, { immediate = false }: { immediate?: boolean } = {}) => {
       setText(value);
       saveDraft(value);
+      // New content invalidates both a pending clear confirmation and any
+      // stale playback notice.
+      if (clearTimer.current) clearTimeout(clearTimer.current);
+      setClearArmed(false);
+      setNotice(null);
       if (typingTimer.current) clearTimeout(typingTimer.current);
       const run = () => setChunks(engine.load(value));
       if (immediate) run();
@@ -448,7 +463,6 @@ function Main() {
               rate={prefs.rate}
               pitch={prefs.pitch}
               volume={prefs.volume}
-              onPreview={() => {}}
               onCommit={onDeliveryCommit}
               onPreset={onPreset}
               onReset={onReset}

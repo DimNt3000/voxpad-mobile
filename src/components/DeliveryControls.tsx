@@ -1,17 +1,20 @@
 /**
  * Rate, pitch and volume sliders plus the speed presets. Values are committed
  * to the engine on release, not on every tick, so a drag does not restart the
- * current sentence dozens of times.
+ * current sentence dozens of times; the numeric readout still follows the
+ * finger live through local preview state.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Btn } from './ui';
 import type { Theme } from '../theme';
 
+type SliderKey = 'rate' | 'pitch' | 'volume';
+
 interface SliderSpec {
-  key: 'rate' | 'pitch' | 'volume';
+  key: SliderKey;
   label: string;
   min: number;
   max: number;
@@ -23,8 +26,7 @@ export function DeliveryControls(props: {
   rate: number;
   pitch: number;
   volume: number;
-  onPreview: (key: 'rate' | 'pitch' | 'volume', value: number) => void;
-  onCommit: (key: 'rate' | 'pitch' | 'volume', value: number) => void;
+  onCommit: (key: SliderKey, value: number) => void;
   onPreset: (rate: number) => void;
   onReset: () => void;
   theme: Theme;
@@ -39,6 +41,7 @@ export function DeliveryControls(props: {
   };
 }) {
   const { theme, labels } = props;
+  const [preview, setPreview] = useState<{ key: SliderKey; value: number } | null>(null);
 
   const sliders: SliderSpec[] = [
     { key: 'rate', label: labels.rate, min: 0.5, max: 2, step: 0.05, format: (v) => `${v.toFixed(2)}x` },
@@ -50,11 +53,12 @@ export function DeliveryControls(props: {
     <View style={styles.wrap}>
       {sliders.map((spec) => {
         const value = props[spec.key];
+        const shown = preview && preview.key === spec.key ? preview.value : value;
         return (
           <View key={spec.key} style={styles.row}>
             <View style={styles.labelRow}>
               <Text style={[styles.label, { color: theme.inkSoft }]}>{spec.label}</Text>
-              <Text style={[styles.value, { color: theme.inkFaint }]}>{spec.format(value)}</Text>
+              <Text style={[styles.value, { color: theme.inkFaint }]}>{spec.format(shown)}</Text>
             </View>
             <Slider
               accessibilityLabel={spec.label}
@@ -62,8 +66,11 @@ export function DeliveryControls(props: {
               maximumValue={spec.max}
               step={spec.step}
               value={value}
-              onValueChange={(v) => props.onPreview(spec.key, v)}
-              onSlidingComplete={(v) => props.onCommit(spec.key, v)}
+              onValueChange={(v) => setPreview({ key: spec.key, value: v })}
+              onSlidingComplete={(v) => {
+                setPreview(null);
+                props.onCommit(spec.key, v);
+              }}
               minimumTrackTintColor={theme.accent}
               maximumTrackTintColor={theme.line}
               thumbTintColor={theme.accent}

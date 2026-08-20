@@ -134,8 +134,22 @@ export class SpeechEngine {
   resume(): void {
     if (this.state !== 'paused') return;
     this.setState('speaking');
-    if (NATIVE_PAUSE) Speech.resume().catch(() => {});
-    else this.speakCurrent();
+    if (NATIVE_PAUSE) {
+      Speech.resume().catch(() => {});
+      // If the paused utterance had already finished (or died) there is
+      // nothing to resume; restart the current sentence, like the web app.
+      const token = this.token;
+      setTimeout(() => {
+        if (token !== this.token || this.state !== 'speaking') return;
+        Speech.isSpeakingAsync()
+          .then((speaking) => {
+            if (!speaking && token === this.token && this.state === 'speaking') this.speakCurrent();
+          })
+          .catch(() => {});
+      }, 250);
+    } else {
+      this.speakCurrent();
+    }
   }
 
   toggle(): void {
@@ -157,6 +171,8 @@ export class SpeechEngine {
   step(delta: number): void {
     if (!this.chunks.length) return;
     const target = clamp(this.index + delta, 0, this.chunks.length - 1);
+    // Already at the boundary: stepping is a no-op, not a restart.
+    if (target === this.index && this.state !== 'idle') return;
     if (this.state === 'idle') {
       this.index = target;
       this.emit('sentence', target);
@@ -215,6 +231,10 @@ export class SpeechEngine {
 
       onDone: () => {
         if (token !== this.token) return;
+        // A done callback racing a pause at a sentence boundary must not
+        // advance while the user believes playback is paused; resume() will
+        // pick the sentence back up.
+        if (this.state === 'paused') return;
         if (this.index + 1 >= this.chunks.length) {
           this.finish();
         } else {
@@ -231,8 +251,10 @@ export class SpeechEngine {
 
       onError: (error: Error) => {
         if (token !== this.token) return;
-        this.emit('error', error?.message || 'unknown');
+        // The error event goes out last, so UI handlers reacting to finish()
+        // cannot overwrite the error message with a success message.
         this.finish();
+        this.emit('error', error?.message || 'unknown');
       },
     });
   }
