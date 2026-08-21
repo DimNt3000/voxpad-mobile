@@ -1,5 +1,7 @@
 # Voxpad Mobile
 
+[![CI](https://github.com/DimNt3000/voxpad-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/DimNt3000/voxpad-mobile/actions/workflows/ci.yml)
+
 A text to speech reader for Android and iOS, built with React Native, Expo and TypeScript. Paste
 text, pick one of the voices installed on the device, and listen while the sentence being spoken
 is highlighted. Nothing leaves the phone.
@@ -47,6 +49,22 @@ free Expo account: `npx eas build -p android --profile preview`.
 There is also a web target (`npx expo start --web`), used mainly to smoke test the UI; the
 canonical web app is the vanilla JS sibling project.
 
+## Tests
+
+Node 24 runs the TypeScript sources directly, so the suite needs no test
+framework and no build step:
+
+```bash
+npm test        # unit tests
+npm run typecheck
+```
+
+45 tests cover the shared core: sentence segmentation on both paths, exercising
+the hand written scanner first because that is the one Hermes actually takes on
+device, and parity between the two translation tables. Several are regression
+tests for defects found in an end to end audit, including the Greek question
+mark this port once lost to an editor normalising the character.
+
 ## How it works
 
 ### One architecture, two platforms
@@ -61,6 +79,7 @@ src/speech/engine.ts     chunk-chaining playback engine over expo-speech
 src/speech/voices.ts     voice discovery, grouping, sorting
 src/components/          reader, voice picker, delivery sliders, transport bar
 App.tsx                  controller wiring it all together
+test/                    unit tests, run with node --test
 ```
 
 The engine speaks the text sentence by sentence instead of handing the whole document to the

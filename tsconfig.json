@@ -1,6 +1,10 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    // The test files import node:test and run under Node's TypeScript support,
+    // which needs the .ts extension in the specifier.
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
   }
 }
