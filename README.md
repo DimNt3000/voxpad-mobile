@@ -43,8 +43,18 @@ npx expo start
 Scan the QR code with [Expo Go](https://expo.dev/go) on your phone (Android or iOS). No Android
 Studio or Xcode needed for development.
 
-To produce an installable APK later, use [EAS Build](https://docs.expo.dev/build/setup/) with a
-free Expo account: `npx eas build -p android --profile preview`.
+### Installable APK
+
+`eas.json` defines a `preview` profile that produces a signed, installable APK
+through [EAS Build](https://docs.expo.dev/build/setup/), on a free Expo account:
+
+```bash
+npx eas-cli build -p android --profile preview
+```
+
+The build runs in the cloud, so no local Android toolchain is needed; the
+signing keystore is generated and stored by EAS on the first run. A `production`
+profile builds an app bundle for the Play Store instead.
 
 There is also a web target (`npx expo start --web`), used mainly to smoke test the UI; the
 canonical web app is the vanilla JS sibling project.
