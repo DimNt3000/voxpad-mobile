@@ -35,6 +35,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "eb541b63-7c0b-4c61-ae97-5314653f28b0"
+      }
+    },
+    "owner": "dimnt3000"
   }
 }
