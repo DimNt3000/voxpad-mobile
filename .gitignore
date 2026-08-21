@@ -43,3 +43,7 @@ yarn-error.*
 # local web export used for screenshots
 .web-dist/
 .export-check/
+
+# EAS local build artifacts
+*.apk
+*.aab
