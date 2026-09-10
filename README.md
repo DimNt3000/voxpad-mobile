@@ -1,6 +1,7 @@
 # Voxpad Mobile
 
 [![CI](https://github.com/DimNt3000/voxpad-mobile/actions/workflows/ci.yml/badge.svg)](https://github.com/DimNt3000/voxpad-mobile/actions/workflows/ci.yml)
+[![Download APK](https://img.shields.io/github/v/release/DimNt3000/voxpad-mobile?label=download%20APK)](https://github.com/DimNt3000/voxpad-mobile/releases/latest)
 
 A text to speech reader for Android and iOS, built with React Native, Expo and TypeScript. Paste
 text, pick one of the voices installed on the device, and listen while the sentence being spoken
@@ -45,8 +46,12 @@ Studio or Xcode needed for development.
 
 ### Installable APK
 
-`eas.json` defines a `preview` profile that produces a signed, installable APK
-through [EAS Build](https://docs.expo.dev/build/setup/), on a free Expo account:
+A signed APK is attached to every release:
+**[download the latest](https://github.com/DimNt3000/voxpad-mobile/releases/latest)**. It needs
+Android 7.0 or newer and is universal, so it runs on phones and emulators alike.
+
+To build one yourself, `eas.json` defines a `preview` profile that produces a signed, installable
+APK through [EAS Build](https://docs.expo.dev/build/setup/), on a free Expo account:
 
 ```bash
 npx eas-cli build -p android --profile preview
@@ -55,6 +60,10 @@ npx eas-cli build -p android --profile preview
 The build runs in the cloud, so no local Android toolchain is needed; the
 signing keystore is generated and stored by EAS on the first run. A `production`
 profile builds an app bundle for the Play Store instead.
+
+Note that EAS keeps build artifacts for a limited window, so the download link on a build page
+stops working after a couple of weeks. That is why the APK is also attached to the GitHub release,
+where it stays available.
 
 There is also a web target (`npx expo start --web`), used mainly to smoke test the UI; the
 canonical web app is the vanilla JS sibling project.
